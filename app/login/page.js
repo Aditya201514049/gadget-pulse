@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
@@ -15,11 +15,12 @@ export default function Login() {
   const router = useRouter();
   const { login, currentUser, signInWithGoogle } = useAuth();
 
-  // If user is already logged in, redirect to home
-  if (currentUser) {
-    router.push("/dashboard");
-    return null;
-  }
+  // Use useEffect for navigation instead of in the render function
+  useEffect(() => {
+    if (currentUser) {
+      router.push("/dashboard");
+    }
+  }, [currentUser, router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
