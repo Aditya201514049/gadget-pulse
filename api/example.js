@@ -1,5 +1,5 @@
 // filepath: d:\projects\gadget-pulse\pages\api\example.js
-import connectMongo from "@/lib/mongo";
+import connectMongo from "@/lib/mongodb";
 
 export default async function handler(req, res) {
   try {
