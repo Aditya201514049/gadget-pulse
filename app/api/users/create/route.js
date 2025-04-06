@@ -1,4 +1,4 @@
-import connectMongo from "@/lib/mongodb";
+import connectMongo from "@/lib/mongo";
 import User from "@/models/User";
 
 export async function POST(request) {

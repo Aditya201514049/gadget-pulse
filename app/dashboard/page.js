@@ -1,87 +1,247 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Header from "@/components/Header";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import Link from "next/link";
 
 export default function Dashboard() {
   const { currentUser } = useAuth();
-  const [userData, setUserData] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [stats, setStats] = useState({
+    products: 0,
+    reviews: 0,
+    admins: 0
+  });
+  const [recentProducts, setRecentProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (!currentUser) return;
-      
+    if (!currentUser) return;
+
+    async function checkAdminStatus() {
       try {
-        const response = await fetch(`/api/users/${currentUser.uid}`);
-        const data = await response.json();
+        // Get the auth token
+        const token = await currentUser.getIdToken();
         
-        if (data.success) {
-          setUserData(data.user);
+        // Check if user is admin
+        const response = await fetch('/api/admins/check', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          setIsAdmin(true);
+          fetchDashboardData(token);
         }
       } catch (error) {
-        console.error("Error fetching user data:", error);
+        console.error('Error checking admin status', error);
       } finally {
         setLoading(false);
       }
-    };
+    }
 
-    fetchUserData();
+    async function fetchDashboardData(token) {
+      try {
+        // Fetch dashboard statistics
+        const statsResponse = await fetch('/api/dashboard/stats', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json();
+          setStats(statsData);
+        }
+        
+        // Fetch recent products
+        const productsResponse = await fetch('/api/products?limit=5', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (productsResponse.ok) {
+          const productsData = await productsResponse.json();
+          setRecentProducts(productsData.products);
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard data', error);
+      }
+    }
+
+    checkAdminStatus();
   }, [currentUser]);
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900">Access Denied</h1>
+          <p className="mt-2 text-sm text-gray-500">
+            You don&apos;t have admin access to the dashboard.
+          </p>
+          <p className="mt-4">
+            <Link href="/" className="text-primary hover:text-primary-focus">
+              Return to Home
+            </Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <main className="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
-          <div className="px-4 py-6 sm:px-0">
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
-              
-              {loading ? (
-                <div className="animate-pulse space-y-4">
-                  <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                </div>
-              ) : (
-                <div>
-                  <div className="mb-4">
-                    <h2 className="text-xl font-semibold text-gray-800">Welcome, {currentUser?.displayName || userData?.displayName || "User"}!</h2>
-                    <p className="text-gray-600">This is your personal dashboard.</p>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-indigo-50 p-4 rounded-md">
-                      <h3 className="font-medium text-indigo-800">Profile</h3>
-                      <p className="text-sm text-indigo-600">View and edit your profile information</p>
-                      <a href="/profile" className="mt-2 inline-block text-sm text-indigo-600 hover:text-indigo-500">
-                        Go to profile →
-                      </a>
-                    </div>
-                    <div className="bg-purple-50 p-4 rounded-md">
-                      <h3 className="font-medium text-purple-800">Settings</h3>
-                      <p className="text-sm text-purple-600">Configure your account settings</p>
-                      <a href="#" className="mt-2 inline-block text-sm text-purple-600 hover:text-purple-500">
-                        Go to settings →
-                      </a>
-                    </div>
-                    <div className="bg-blue-50 p-4 rounded-md">
-                      <h3 className="font-medium text-blue-800">Orders</h3>
-                      <p className="text-sm text-blue-600">View your order history</p>
-                      <a href="#" className="mt-2 inline-block text-sm text-blue-600 hover:text-blue-500">
-                        View orders →
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              )}
+    <div className="space-y-6">
+      <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+      
+      {/* Stats overview */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 bg-primary rounded-md p-3">
+                <svg className="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Total Products</dt>
+                  <dd className="flex items-baseline">
+                    <div className="text-2xl font-semibold text-gray-900">{stats.products}</div>
+                  </dd>
+                </dl>
+              </div>
             </div>
           </div>
-        </main>
+          <div className="bg-gray-50 px-4 py-4 sm:px-6">
+            <div className="text-sm">
+              <Link href="/dashboard/products" className="font-medium text-primary hover:text-primary-focus">
+                View all products
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 bg-primary rounded-md p-3">
+                <svg className="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                </svg>
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Total Reviews</dt>
+                  <dd className="flex items-baseline">
+                    <div className="text-2xl font-semibold text-gray-900">{stats.reviews}</div>
+                  </dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+          <div className="bg-gray-50 px-4 py-4 sm:px-6">
+            <div className="text-sm">
+              <a href="#" className="font-medium text-primary hover:text-primary-focus">
+                View all reviews
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 bg-primary rounded-md p-3">
+                <svg className="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Admins</dt>
+                  <dd className="flex items-baseline">
+                    <div className="text-2xl font-semibold text-gray-900">{stats.admins}</div>
+                  </dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+          <div className="bg-gray-50 px-4 py-4 sm:px-6">
+            <div className="text-sm">
+              <Link href="/dashboard/admins" className="font-medium text-primary hover:text-primary-focus">
+                Manage admins
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
-    </ProtectedRoute>
+
+      {/* Recent products */}
+      <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
+          <div>
+            <h3 className="text-lg leading-6 font-medium text-gray-900">Recent Products</h3>
+            <p className="mt-1 max-w-2xl text-sm text-gray-500">Latest products added to the catalog.</p>
+          </div>
+          <Link href="/dashboard/products/new" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-focus">
+            Add Product
+          </Link>
+        </div>
+        <div className="border-t border-gray-200">
+          <ul role="list" className="divide-y divide-gray-200">
+            {recentProducts.length > 0 ? (
+              recentProducts.map((product) => (
+                <li key={product._id} className="px-4 py-4 sm:px-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex-shrink-0 h-16 w-16 rounded-md overflow-hidden">
+                      <img 
+                        src={product.images[0] || '/placeholder-product.jpg'} 
+                        alt={product.name}
+                        className="h-full w-full object-center object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{product.name}</p>
+                      <p className="text-sm text-gray-500 truncate">{product.category} | {product.brand}</p>
+                      <p className="text-sm text-gray-500">${product.price.toFixed(2)}</p>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Link 
+                        href={`/dashboard/products/${product.slug}`} 
+                        className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-primary-700 bg-primary-100 hover:bg-primary-200"
+                      >
+                        View
+                      </Link>
+                      <Link 
+                        href={`/dashboard/products/${product.slug}/edit`} 
+                        className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-primary hover:bg-primary-focus"
+                      >
+                        Edit
+                      </Link>
+                    </div>
+                  </div>
+                </li>
+              ))
+            ) : (
+              <li className="px-4 py-5 sm:px-6 text-center text-gray-500">
+                No products found. Add your first product!
+              </li>
+            )}
+          </ul>
+        </div>
+      </div>
+    </div>
   );
 } 

@@ -30,6 +30,29 @@ const UserSchema = new mongoose.Schema({
   phoneNumber: {
     type: String,
     default: ""
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false
+  },
+  favorites: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: 'Product',
+    default: []
+  },
+  lastLogin: {
+    type: Date,
+    default: Date.now
+  },
+  compareList: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: 'Product',
+    default: []
+  },
+  recentlyViewed: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: 'Product',
+    default: []
   }
 });
 

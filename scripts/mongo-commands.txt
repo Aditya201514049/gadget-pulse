@@ -1,0 +1,39 @@
+// MongoDB Compass Commands to make a user an admin
+// Replace YOUR_EMAIL@example.com with your actual email
+
+// Step 1: Find your user by email
+// Run this in MongoDB Compass query box for "users" collection
+db.users.findOne({ email: "YOUR_EMAIL@example.com" })
+
+// After finding your user, note down the "uid" value
+// Let's say your uid is "abc123xyz456"
+
+// Step 2: Update the user to set isAdmin flag to true
+db.users.updateOne(
+  { email: "YOUR_EMAIL@example.com" },
+  { $set: { isAdmin: true } }
+)
+
+// Step 3: Create an admin record using your uid
+db.admins.insertOne({
+  uid: "YOUR_USER_UID", // Replace with your uid from step 1
+  email: "YOUR_EMAIL@example.com", // Replace with your email
+  displayName: "Admin User", // You can change this
+  role: "superadmin",
+  addedBy: "YOUR_USER_UID", // Same as the uid above
+  createdAt: new Date(),
+  permissions: {
+    createProducts: true,
+    editProducts: true,
+    deleteProducts: true,
+    manageAdmins: true,
+    manageUsers: true
+  }
+})
+
+// Step 4: Verify admin status
+// Run this to check that your user now has isAdmin set to true
+db.users.findOne({ email: "YOUR_EMAIL@example.com" })
+
+// Run this to check that your admin record was created
+db.admins.findOne({ email: "YOUR_EMAIL@example.com" }) 
