@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
-import LogoutButton from "@/components/LogoutButton";
 
 export default function DashboardLayout({ children }) {
   const { currentUser, loading, logout } = useAuth();
@@ -91,7 +90,7 @@ export default function DashboardLayout({ children }) {
                 </span>
                 <button
                   onClick={handleLogout}
-                  className="ml-4 px-3 py-1 text-sm text-white bg-primary hover:bg-primary-focus rounded-md transition-colors"
+                  className="ml-4 btn btn-error btn-sm font-bold"
                 >
                   Logout
                 </button>
@@ -173,7 +172,7 @@ export default function DashboardLayout({ children }) {
               <div className="mt-3 space-y-1">
                 <button
                   onClick={handleLogout}
-                  className="block w-full text-left px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                  className="block w-full text-left px-4 py-2 text-base font-bold text-white bg-red-500 hover:bg-red-600 mt-2 rounded-md"
                 >
                   Logout
                 </button>
@@ -189,9 +188,6 @@ export default function DashboardLayout({ children }) {
           {children}
         </div>
       </div>
-
-      {/* Always visible logout button */}
-      <LogoutButton />
     </div>
   );
 } 
