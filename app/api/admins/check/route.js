@@ -103,7 +103,8 @@ export async function GET(request) {
         );
       }
     }
-    
+    console.log('Admin Check Debug:', { uid, email });
+    console.log('Admin Record:', admin);
     // Return admin information
     return NextResponse.json({
       message: 'User is an admin',
@@ -123,4 +124,4 @@ export async function GET(request) {
       { status: 500 }
     );
   }
-} 
+}
